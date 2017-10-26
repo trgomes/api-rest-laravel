@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Hash;
 use App\User;
 
@@ -25,7 +24,8 @@ class UserController extends Controller
     public function index()
     {
         //retorna todos os usuários
-        return User::all();
+        $users = User::all();
+        return response()->json($users, 200);
     }
 
     /**
@@ -47,18 +47,17 @@ class UserController extends Controller
     public function store(Request $request)
     {
         try {
-            $dados = request(); //Recebe em um array tudo que enviado na chamada para a API
-            //$input['password'] = Hash::make($input['password']);
+            
             $user = new User([
                 'name' => $request->input('name'),
                 'email' => $request->input('email'),
                 'password' => Hash::make($request->input('password'))
-            ]);
-            //$user->fill($input); // Transforma os dados em objeto --- associação em massa -- (Nao pode ser usado sem fillable)
+            ]);            
             $user->save();
-            return Response::json(['response' => 'Cadastrado com sucesso!'], 200);
+            return response()->json(['response' => 'Cadastrado com sucesso!'], 200);
+            
         } catch (Exception $e) {
-            return response('Erro ao cadastrar',500);
+            return response()->json(['response' => 'Erro ao cadastrar!'],400);
         }
 
         
@@ -75,9 +74,9 @@ class UserController extends Controller
         $user = User::find($id);
         if(is_null($user))
         {
-            return Response::json(['response' => 'Usuário não encontrado!'], 400);
+            return response()->json(['response' => 'Usuário não encontrado!'], 400);
         }
-        return $user;
+        return response()->json($user, 200);
     }
 
     /**
@@ -100,7 +99,19 @@ class UserController extends Controller
      */
     public function update(Request $request, $id)
     {
-        //
+        $user = User::find($id);
+        
+        if(!$user)
+        {
+            return response()->json(['response' => 'Usuário não encontrado!'], 400);
+        }
+                
+        $user->name = $request->input('name');
+        $user->email = $request->input('email');
+        $user->password = Hash::make($request->input('password'));        
+        
+        $user->save();
+        return response()->json($user, 200);
     }
 
     /**
@@ -111,6 +122,15 @@ class UserController extends Controller
      */
     public function destroy($id)
     {
-        //
+        $user = User::find($id);
+        
+        if(!$user)
+        {
+            return response()->json(['response' => 'Este ID nao existe.'], 200);
+        }
+        
+        $user->delete();
+        return response()->json(['response' => 'Usuario excluido'], 200);
+        
     }
 }
